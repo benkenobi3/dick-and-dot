@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"os"
 
 	botapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	dotenv "github.com/joho/godotenv"
 
 	"github.com/benkenobi3/dick-and-dot/internal/telegram/update"
@@ -17,6 +20,8 @@ func main() {
 		log.Panic(err)
 	}
 
+	ctx := context.Background()
+
 	token, exists := os.LookupEnv("TELEGRAM_TOKEN")
 	if !exists {
 		log.Panic("Cannot get telegram token from 'TELEGRAM_TOKEN' env variable")
@@ -27,7 +32,17 @@ func main() {
 		log.Panic("Cannot get hostname from 'HOST' env variable")
 	}
 
+	databaseURL, exists := os.LookupEnv("DATABASE_URL")
+	if !exists {
+		log.Fatal("Cannot get database url from 'DATABASE_URL' env variable")
+	}
+
 	bot, err := botapi.NewBotAPI(token)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db, err := sqlx.Connect("pgx", databaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,8 +69,8 @@ func main() {
 
 	updates := bot.ListenForWebhook("/" + token)
 
-	updatesHandler := update.NewHandler(bot)
+	updatesHandler := update.NewHandler(db, bot)
 	for u := range updates {
-		updatesHandler.Handle(u)
+		updatesHandler.Handle(ctx, u)
 	}
 }

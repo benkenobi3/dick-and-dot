@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: postgres-dick-and-dot
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: dick
+    restart: always
+    networks:
+      - debug-dick-and-dot
+    ports:
+      - target: 5432
+        published: 6432
+
+networks:
+  debug-dick-and-dot:
