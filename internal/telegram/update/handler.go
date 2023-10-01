@@ -2,12 +2,15 @@ package update
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"sort"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/benkenobi3/dick-and-dot/internal/database/repository"
+	"github.com/benkenobi3/dick-and-dot/internal/features/random"
 )
 
 type handler struct {
@@ -49,9 +52,17 @@ func (h *handler) Handle(ctx context.Context, update tgbotapi.Update) {
 			"/help - еще раз прочитать это сообщение \n\n" +
 			"Добавляй бот в свои чаты!"
 	case "dick":
-		msg.Text = h.dickCommand(ctx, update.Message.From.ID, update.Message.Chat.ID)
+		text, err := h.dickCommand(ctx, update.Message.From.ID, update.Message.Chat.ID)
+		if err != nil {
+			log.Println(err)
+		}
+		msg.Text = text
 	case "top":
-		msg.Text = h.topCommand(ctx, update.Message.Chat.ID)
+		text, err := h.topCommand(ctx, update.Message.Chat.ID)
+		if err != nil {
+			log.Println(err)
+		}
+		msg.Text = text
 	default:
 		// ignore unknown command
 		return
@@ -63,10 +74,78 @@ func (h *handler) Handle(ctx context.Context, update tgbotapi.Update) {
 	}
 }
 
-func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) string {
-	return ""
+func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string, error) {
+	allDicks, err := h.dicks.GetDicksByChatId(ctx, chatID)
+	if err != nil {
+		return "", fmt.Errorf("cannot get dicks for /dick command: %w", err)
+	}
+
+	currentDick, exists := allDicks[userID]
+	if !exists {
+		currentDick = repository.Dick{
+			UserID: userID,
+			ChatID: chatID,
+			Length: random.GetNewLength(0),
+		}
+		err = h.dicks.CreateDick(ctx, currentDick)
+		if err != nil {
+			return "", fmt.Errorf("cannot create new dick: %w", err)
+		}
+		return fmt.Sprintf("Ты только что получил новый писюн, он равен %d см", currentDick.Length), nil
+	}
+
+	newLength := random.GetNewLength(currentDick.Length)
+	diffLength := currentDick.Length - newLength
+
+	currentDick.Length = newLength
+	err = h.dicks.UpdateDick(ctx, currentDick)
+	if err != nil {
+		return "", fmt.Errorf("cannot update dick: %w", err)
+	}
+
+	verb := "вырос"
+	if diffLength < 0 {
+		verb = "уменьшился"
+		diffLength *= -1
+	}
+
+	return fmt.Sprintf("Твой писюн %s на %d см, теперь он равен %d см", verb, diffLength, currentDick.Length), nil
 }
 
-func (h *handler) topCommand(ctx context.Context, chatID int64) string {
-	return ""
+func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) {
+
+	allDicks, err := h.dicks.GetDicksByChatId(ctx, chatID)
+	if err != nil {
+		return "", fmt.Errorf("cannot get dicks for /dick command: %w", err)
+	}
+
+	sortedDicks := make([]repository.Dick, 0, len(allDicks))
+	for _, dick := range allDicks {
+		sortedDicks = append(sortedDicks, dick)
+	}
+
+	sort.SliceStable(sortedDicks, func(i, j int) bool {
+		return sortedDicks[i].Length < sortedDicks[j].Length
+	})
+
+	sortedDicks = sortedDicks[:15] // cut to top 15 dicks
+
+	finalText := "Топ 15 членов этого чата: \n\n"
+	for idx, dick := range sortedDicks {
+		config := tgbotapi.GetChatMemberConfig{
+			ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
+				ChatID: dick.ChatID,
+				UserID: dick.UserID,
+			},
+		}
+
+		chatMember, err := h.bot.GetChatMember(config)
+		if err != nil {
+			return "", fmt.Errorf("cannot get chat for /dick command: %w", err)
+		}
+
+		finalText += fmt.Sprintf("%d | %s - писька равна %d см \n", idx, chatMember.User.UserName, dick.Length)
+	}
+
+	return finalText, nil
 }
