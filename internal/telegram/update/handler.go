@@ -95,7 +95,7 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 	}
 
 	newLength := random.GetNewLength(currentDick.Length)
-	diffLength := currentDick.Length - newLength
+	diffLength := newLength - currentDick.Length
 
 	currentDick.Length = newLength
 	err = h.dicks.UpdateDick(ctx, currentDick)
@@ -128,7 +128,9 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 		return sortedDicks[i].Length < sortedDicks[j].Length
 	})
 
-	sortedDicks = sortedDicks[:15] // cut to top 15 dicks
+	if len(sortedDicks) > 15 {
+		sortedDicks = sortedDicks[:15] // cut to top 15 dicks
+	}
 
 	finalText := "Топ 15 членов этого чата: \n\n"
 	for idx, dick := range sortedDicks {
@@ -144,7 +146,7 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 			return "", fmt.Errorf("cannot get chat for /dick command: %w", err)
 		}
 
-		finalText += fmt.Sprintf("%d | %s - писька равна %d см \n", idx, chatMember.User.UserName, dick.Length)
+		finalText += fmt.Sprintf("%d | %s - писька равна %d см \n", idx+1, chatMember.User.UserName, dick.Length)
 	}
 
 	return finalText, nil
