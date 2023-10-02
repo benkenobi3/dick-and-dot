@@ -17,11 +17,9 @@ func GetNewLength(startLength int64) int64 {
 func TimeBeforeReadyToGrow(dick repository.Dick) *time.Duration {
 	now := time.Now().UTC()
 	ableToGrowAgainAt := dick.UpdatedAt.Add(dickTimeoutNs)
-	var timeLeft *time.Duration
 	if now.Before(ableToGrowAgainAt) {
-		t := ableToGrowAgainAt.Sub(now)
-		timeLeft = &t
+		timeLeft := ableToGrowAgainAt.Sub(now)
+		return &timeLeft
 	}
-
-	return timeLeft
+	return nil
 }

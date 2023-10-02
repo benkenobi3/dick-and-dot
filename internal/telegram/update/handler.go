@@ -3,11 +3,12 @@ package update
 import (
 	"context"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/jmoiron/sqlx"
 	"log"
 	"sort"
 	"time"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/benkenobi3/dick-and-dot/internal/database/repository"
 	"github.com/benkenobi3/dick-and-dot/internal/features/random"
@@ -94,9 +95,8 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 		return fmt.Sprintf("Ты только что получил новый писюн, он равен %d см", currentDick.Length), nil
 	}
 
-	t := random.TimeBeforeReadyToGrow(currentDick)
-	if t != nil {
-		timeLeft := *t
+	timeLeft := random.TimeBeforeReadyToGrow(currentDick)
+	if timeLeft != nil {
 		timeLeftFormatted := timeLeft.Round(time.Second).String()
 		return fmt.Sprintf("Как же он наяривает...\nОстынь, писюн будет готов через %s", timeLeftFormatted), nil
 	}
