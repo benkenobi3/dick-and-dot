@@ -3,11 +3,11 @@ package update
 import (
 	"context"
 	"fmt"
-	"log"
-	"sort"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jmoiron/sqlx"
+	"log"
+	"sort"
+	"time"
 
 	"github.com/benkenobi3/dick-and-dot/internal/database/repository"
 	"github.com/benkenobi3/dick-and-dot/internal/features/random"
@@ -94,6 +94,13 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 		return fmt.Sprintf("Ты только что получил новый писюн, он равен %d см", currentDick.Length), nil
 	}
 
+	t := random.TimeBeforeReadyToGrow(currentDick)
+	if t != nil {
+		timeLeft := *t
+		timeLeftFormatted := timeLeft.Round(time.Second).String()
+		return fmt.Sprintf("Как же он наяривает...\nОстынь, писюн будет готов через %s", timeLeftFormatted), nil
+	}
+
 	newLength := random.GetNewLength(currentDick.Length)
 	diffLength := newLength - currentDick.Length
 
@@ -109,7 +116,18 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 		diffLength *= -1
 	}
 
-	return fmt.Sprintf("Твой писюн %s на %d см, теперь он равен %d см", verb, diffLength, currentDick.Length), nil
+	allDicks[userID] = currentDick
+	sortedDicks := sortDicks(allDicks)
+	var topPos int
+	for i, dick := range sortedDicks {
+		if dick.UserID == userID {
+			topPos = i + 1
+			break
+		}
+	}
+
+	return fmt.Sprintf("Твой писюн %s на %d см, теперь он равен %d см.\n"+
+		"Он разрывает чарты: %d место", verb, diffLength, currentDick.Length, topPos), nil
 }
 
 func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) {
@@ -119,15 +137,7 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 		return "", fmt.Errorf("cannot get dicks for /dick command: %w", err)
 	}
 
-	sortedDicks := make([]repository.Dick, 0, len(allDicks))
-	for _, dick := range allDicks {
-		sortedDicks = append(sortedDicks, dick)
-	}
-
-	sort.SliceStable(sortedDicks, func(i, j int) bool {
-		return sortedDicks[i].Length < sortedDicks[j].Length
-	})
-
+	sortedDicks := sortDicks(allDicks)
 	if len(sortedDicks) > 15 {
 		sortedDicks = sortedDicks[:15] // cut to top 15 dicks
 	}
@@ -150,4 +160,17 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 	}
 
 	return finalText, nil
+}
+
+func sortDicks(allDicks map[int64]repository.Dick) []repository.Dick {
+	sortedDicks := make([]repository.Dick, 0, len(allDicks))
+	for _, dick := range allDicks {
+		sortedDicks = append(sortedDicks, dick)
+	}
+
+	sort.SliceStable(sortedDicks, func(i, j int) bool {
+		return sortedDicks[i].Length < sortedDicks[j].Length
+	})
+
+	return sortedDicks
 }
