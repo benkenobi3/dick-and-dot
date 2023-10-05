@@ -1,3 +1,5 @@
+begin;
+
 create table if not exists public.dick (
     id bigserial not null,
     user_id bigint not null,
@@ -5,3 +7,5 @@ create table if not exists public.dick (
     length bigint not null,
     updated_at timestamptz not null default now()
 );
+
+commit;
