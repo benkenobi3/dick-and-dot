@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  bot:
+    container_name: bot-dick-and-dot
+    image: benkenobi3/dick-and-dot:latest
+    command:
+      - /bot/longpool
+    build: .
+    environment:
+      DATABASE_URL: postgres://postgres:dick@postgres:5432/postgres
+    volumes:
+      - .env:/bot/.env
+    restart: always
+    networks:
+      - run-dick-and-dot
+
+  postgres:
+    container_name: postgres-dick-and-dot
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: dick
+    restart: always
+    networks:
+      - run-dick-and-dot
+    expose:
+      - 5432
+
+networks:
+  run-dick-and-dot:
