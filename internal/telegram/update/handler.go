@@ -169,7 +169,7 @@ func sortDicks(allDicks map[int64]repository.Dick) []repository.Dick {
 	}
 
 	sort.SliceStable(sortedDicks, func(i, j int) bool {
-		return sortedDicks[i].Length < sortedDicks[j].Length
+		return sortedDicks[i].Length > sortedDicks[j].Length
 	})
 
 	return sortedDicks
