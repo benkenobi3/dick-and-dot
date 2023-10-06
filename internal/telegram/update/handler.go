@@ -168,6 +168,10 @@ func sortDicks(allDicks map[int64]repository.Dick) []repository.Dick {
 		sortedDicks = append(sortedDicks, dick)
 	}
 
+	if len(sortedDicks) < 2 {
+		return sortedDicks
+	}
+
 	sort.SliceStable(sortedDicks, func(i, j int) bool {
 		return sortedDicks[i].Length > sortedDicks[j].Length
 	})
