@@ -2,6 +2,9 @@ FROM golang:1.21-alpine3.18 AS builder
 
 WORKDIR /build
 
+ENV GOOS=linux
+ENV GOARCH=amd64
+
 COPY . .
 
 RUN go mod download
