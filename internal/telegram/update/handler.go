@@ -156,7 +156,12 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 			return "", fmt.Errorf("cannot get chat for /dick command: %w", err)
 		}
 
-		finalText += fmt.Sprintf("%d | %s - писька равна %d см \n", idx+1, chatMember.User.UserName, dick.Length)
+		userName := chatMember.User.FirstName
+		if chatMember.User.LastName != "" {
+			userName += fmt.Sprintf(" %s", chatMember.User.LastName)
+		}
+
+		finalText += fmt.Sprintf("%d | %s - писька равна %d см \n", idx+1, userName, dick.Length)
 	}
 
 	return finalText, nil
