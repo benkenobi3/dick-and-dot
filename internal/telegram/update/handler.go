@@ -95,10 +95,12 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 		return fmt.Sprintf("Ты только что получил новый писюн, он равен %d см", currentDick.Length), nil
 	}
 
-	timeLeft := random.TimeBeforeReadyToGrow(currentDick)
-	if timeLeft != nil {
-		timeLeftFormatted := timeLeft.Round(time.Second).String()
-		return fmt.Sprintf("Как же он наяривает...\nОстынь, писюн будет готов через %s", timeLeftFormatted), nil
+	lastUpd := currentDick.UpdatedAt
+	now := time.Now()
+	ableToGrow := now.Day() > lastUpd.Day() || now.Month() > lastUpd.Month() || now.Year() > lastUpd.Year()
+
+	if !ableToGrow {
+		return fmt.Sprintf("Как же он наяривает...\nОстынь, писюн будет готов завтра"), nil
 	}
 
 	newLength := random.GetNewLength(currentDick.Length)
