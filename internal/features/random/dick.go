@@ -1,29 +1,21 @@
 package random
 
 import (
-	"github.com/benkenobi3/dick-and-dot/internal/database/repository"
+	"math"
 	"math/rand"
-	"time"
-)
-
-const (
-	dickTimeoutNs = time.Hour * 8
 )
 
 func GetNewLength(startLength int64) int64 {
-	if startLength == 0 {
-		return rand.Int63n(11)
-	}
-
-	return startLength + rand.Int63n(16) - 5 // todo: should we avoid 0 value?
+	linearLengthInc := randFloat(-5, 5)
+	normalizedLength := sigmoidNormalization(linearLengthInc)
+	return startLength + int64(math.Round(normalizedLength)) // todo: should we avoid 0 value?
 }
 
-func TimeBeforeReadyToGrow(dick repository.Dick) *time.Duration {
-	now := time.Now().UTC()
-	ableToGrowAgainAt := dick.UpdatedAt.Add(dickTimeoutNs)
-	if now.Before(ableToGrowAgainAt) {
-		timeLeft := ableToGrowAgainAt.Sub(now)
-		return &timeLeft
-	}
-	return nil
+// randFloat in range [min..max)
+func randFloat(min, max float64) float64 {
+	return min + rand.Float64()*(max-min)
+}
+
+func sigmoidNormalization(input float64) float64 {
+	return (3.5 / (0.225 + math.Pow(math.E-0.4, -0.9-input))) - 5
 }
