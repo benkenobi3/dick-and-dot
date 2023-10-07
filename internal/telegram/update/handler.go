@@ -118,16 +118,17 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 
 	allDicks[userID] = currentDick
 	sortedDicks := sortDicks(allDicks)
-	var topPos int
+	topPos := topPositions(sortedDicks)
+	var posForDick int
 	for i, dick := range sortedDicks {
 		if dick.UserID == userID {
-			topPos = i + 1
+			posForDick = topPos[i]
 			break
 		}
 	}
 
 	return fmt.Sprintf("Твой писюн %s на %d см, теперь он равен %d см.\n"+
-		"Он разрывает чарты: %d место", verb, diffLength, currentDick.Length, topPos), nil
+		"Он разрывает чарты: %d место", verb, diffLength, currentDick.Length, posForDick), nil
 }
 
 func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) {
@@ -143,6 +144,7 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 	}
 
 	finalText := "Топ 15 членов этого чата: \n\n"
+	topPos := topPositions(sortedDicks)
 	for idx, dick := range sortedDicks {
 		config := tgbotapi.GetChatMemberConfig{
 			ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
@@ -161,10 +163,39 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 			userName += fmt.Sprintf(" %s", chatMember.User.LastName)
 		}
 
-		finalText += fmt.Sprintf("%d | %s - писька равна %d см \n", idx+1, userName, dick.Length)
+		pos := topPos[idx]
+
+		finalText += fmt.Sprintf("%d | %s - писька равна %d см \n", pos, chatMember.User.UserName, dick.Length)
 	}
 
 	return finalText, nil
+}
+
+func topPositions(sortedDicks []repository.Dick) []int {
+	if len(sortedDicks) == 0 {
+		return []int{}
+	}
+
+	topPos := 1
+	skippedPositions := 0
+	positions := make([]int, 0, len(sortedDicks))
+	positions[0] = topPos
+
+	for idx, dick := range sortedDicks {
+		if idx != 0 {
+			if dick.Length != sortedDicks[idx-1].Length {
+				topPos++
+				positions[idx] = topPos + skippedPositions
+				skippedPositions = 0
+			} else {
+				positions[idx] = topPos
+				skippedPositions++
+			}
+
+		}
+	}
+
+	return positions
 }
 
 func sortDicks(allDicks map[int64]repository.Dick) []repository.Dick {
