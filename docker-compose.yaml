@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  bot:
+    container_name: bot
+    image: benkenobi3/dick-and-dot:latest
+    command:
+      - /bot/longpool
+    volumes:
+      - .env:/bot/.env
+    restart: always
+    networks:
+      - dick-and-dot
+
+networks:
+  dick-and-dot:
