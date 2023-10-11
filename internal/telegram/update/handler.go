@@ -96,7 +96,7 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 	}
 
 	lastUpd := currentDick.UpdatedAt
-	now := time.Now()
+	now := time.Now().UTC()
 	ableToGrow := now.Day() > lastUpd.Day() || now.Month() > lastUpd.Month() || now.Year() > lastUpd.Year()
 
 	if !ableToGrow {
