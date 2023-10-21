@@ -1,21 +1,29 @@
 package random
 
 import (
-	"math"
-	"math/rand"
+	"crypto/rand"
+	"math/big"
+	mrand "math/rand"
 )
 
-func GetNewLength(startLength int64) int64 {
-	linearLengthInc := randFloat(-5, 5)
-	normalizedLength := sigmoidNormalization(linearLengthInc)
-	return startLength + int64(math.Round(normalizedLength)) // todo: should we avoid 0 value?
-}
+const (
+	BlessingSize = 50
+)
 
-// randFloat in range [min..max)
-func randFloat(min, max float64) float64 {
-	return min + rand.Float64()*(max-min)
-}
+func GetNewLength(startLength int64, canBeBlessed bool) (newLength int64, wasBlessed bool) {
+	blessingRand, _ := rand.Int(rand.Reader, big.NewInt(30))
+	if canBeBlessed && blessingRand.Int64() == 0 { // once per month on average
+		return startLength + BlessingSize, true
+	}
 
-func sigmoidNormalization(input float64) float64 {
-	return (3.5 / (0.225 + math.Pow(math.E-0.4, -0.9-input))) - 5
+	defaultRand, _ := rand.Int(rand.Reader, big.NewInt(16))
+	lengthToAdd := defaultRand.Int64() - 5
+	if lengthToAdd == 0 {
+		if mrand.Int()%2 == 0 {
+			lengthToAdd++
+		} else {
+			lengthToAdd--
+		}
+	}
+	return startLength + lengthToAdd, false
 }

@@ -83,16 +83,27 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 
 	currentDick, exists := allDicks[userID]
 	if !exists {
+		newLength, wasBlessed := random.GetNewLength(0, true)
 		currentDick = repository.Dick{
 			UserID: userID,
 			ChatID: chatID,
-			Length: random.GetNewLength(0),
+			Length: newLength,
 		}
 		err = h.dicks.CreateDick(ctx, currentDick)
 		if err != nil {
 			return "", fmt.Errorf("cannot create new dick: %w", err)
 		}
-		return fmt.Sprintf("Ты только что получил новый писюн, он равен %d см", currentDick.Length), nil
+
+		message := ""
+		if wasBlessed {
+			message = fmt.Sprintf("🤡🤡🤡🤡🤡🤡🤡🤡\n\n"+
+				"!!!!ВАУ!!!\n"+
+				"ГОСПОДЬ ПОГЛАДИЛ ТЕБЯ ПО НОВОИСПЕЧЁННОЙ ГОЛОВКЕ\n"+
+				"Прими благословение: %d см", random.BlessingSize)
+		} else {
+			message = fmt.Sprintf("Ты только что получил новый писюн, он равен %d см", currentDick.Length)
+		}
+		return message, nil
 	}
 
 	lastUpd := currentDick.UpdatedAt
@@ -103,7 +114,9 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 		return fmt.Sprintf("Как же он наяривает...\nОстынь, писюн будет готов завтра"), nil
 	}
 
-	newLength := random.GetNewLength(currentDick.Length)
+	posForDick := getTopPosition(allDicks, userID)
+	canBeBlessed := posForDick > 1
+	newLength, wasBlessed := random.GetNewLength(currentDick.Length, canBeBlessed)
 	diffLength := newLength - currentDick.Length
 
 	currentDick.Length = newLength
@@ -112,25 +125,28 @@ func (h *handler) dickCommand(ctx context.Context, userID, chatID int64) (string
 		return "", fmt.Errorf("cannot update dick: %w", err)
 	}
 
-	verb := "вырос"
-	if diffLength < 0 {
-		verb = "уменьшился"
-		diffLength *= -1
-	}
-
 	allDicks[userID] = currentDick
-	sortedDicks := sortDicks(allDicks)
-	topPos := topPositions(sortedDicks)
-	var posForDick int
-	for i, dick := range sortedDicks {
-		if dick.UserID == userID {
-			posForDick = topPos[i]
-			break
+	posForDick = getTopPosition(allDicks, userID)
+
+	message := ""
+	if wasBlessed {
+		message = fmt.Sprintf("🤡🤡🤡🤡🤡🤡🤡🤡\n\n"+
+			"!!!!ВАУ!!!\n"+
+			"ГОСПОДЬ ПОГЛАДИЛ ТЕБЯ ПО ГОЛОВКЕ\n"+
+			"Прими благословение: +%d см\n"+
+			"Твой пипидастр размером в %d см взлетел на ангельских крылышках прямиком на %d место",
+			random.BlessingSize, currentDick.Length, posForDick)
+	} else {
+		verb := "вырос"
+		if diffLength < 0 {
+			verb = "уменьшился"
+			diffLength *= -1
 		}
+		message = fmt.Sprintf("Твой писюн %s на %d см, теперь он равен %d см.\n"+
+			"Он разрывает чарты: %d место", verb, diffLength, currentDick.Length, posForDick)
 	}
 
-	return fmt.Sprintf("Твой писюн %s на %d см, теперь он равен %d см.\n"+
-		"Он разрывает чарты: %d место", verb, diffLength, currentDick.Length, posForDick), nil
+	return message, nil
 }
 
 func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) {
@@ -207,4 +223,15 @@ func sortDicks(allDicks map[int64]repository.Dick) []repository.Dick {
 	})
 
 	return sortedDicks
+}
+
+func getTopPosition(allDicks map[int64]repository.Dick, userID int64) int {
+	sortedDicks := sortDicks(allDicks)
+	topPos := topPositions(sortedDicks)
+	for i, dick := range sortedDicks {
+		if dick.UserID == userID {
+			return topPos[i]
+		}
+	}
+	return -1
 }
