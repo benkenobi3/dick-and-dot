@@ -25,3 +25,6 @@ go.work
 
 # Goland
 .idea
+
+# Github workflows
+.github
