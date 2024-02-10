@@ -9,15 +9,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: dokku
+      - name: Read dotenv
+        run: echo '${{secrets.DotEnvFile}}' > .env
+
+      - name: Push to dokku
         uses: dokku/github-action@v1.4.0
         with:
           branch: main
           command: deploy
           git_remote_url: ssh://dokku@dokku.mpbuyanov.ru:22/dick
-          ssh_private_key: ${{secrets.DOKKU_PRIVATE_KEY}}
+          ssh_private_key: ${{secrets.DokkuPrivateKey}}
