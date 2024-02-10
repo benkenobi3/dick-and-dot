@@ -18,3 +18,5 @@ WORKDIR /bot
 
 COPY --from=builder /build/webhook webhook
 COPY --from=builder /build/longpool longpool
+
+ENTRYPOINT ["/bot/longpool"]
