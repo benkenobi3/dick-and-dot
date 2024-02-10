@@ -15,4 +15,4 @@ jobs:
           branch: main
           command: deploy
           git_remote_url: ssh://dokku@dokku.mpbuyanov.ru:22/dick
-          ssh_private_key: ${DOKKU_PRIVATE_KEY}
+          ssh_private_key: ${{secrets.DOKKU_PRIVATE_KEY}}
