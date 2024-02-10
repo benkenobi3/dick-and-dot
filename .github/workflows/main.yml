@@ -17,6 +17,9 @@ jobs:
       - name: Read dotenv
         run: echo '${{secrets.DotEnvFile}}' > .env
 
+      - name: Prepare docker ignore
+        run: sed -i 's/.env/# .env/' .dockerignore
+
       - name: Push to dokku
         uses: dokku/github-action@v1.4.0
         with:
