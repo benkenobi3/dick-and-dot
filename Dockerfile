@@ -1,22 +1,32 @@
 FROM golang:1.21-alpine3.18 AS builder
 
-WORKDIR /build
+LABEL stage=builder
 
 ENV GOOS=linux
 ENV GOARCH=amd64
+ENV CGO_ENABLED=0
 
-COPY . .
+RUN apk update --no-cache
+
+WORKDIR /build
+
+ADD go.mod .
+ADD go.sum .
 
 RUN go mod download
 
-RUN go build -o webhook github.com/benkenobi3/dick-and-dot/cmd/webhook
-RUN go build -o longpool github.com/benkenobi3/dick-and-dot/cmd/longpool
+COPY . .
+
+RUN go build -ldflags="-s -w" -o /build/webhook ./cmd/webhook
+RUN go build -ldflags="-s -w" -o /build/longpool ./cmd/longpool
 
 FROM alpine:3.18
 
-WORKDIR /bot
+RUN apk update --no-cache && apk add --no-cache ca-certificates
 
-COPY --from=builder /build/webhook webhook
-COPY --from=builder /build/longpool longpool
+WORKDIR /app
 
-ENTRYPOINT ["/bot/longpool"]
+COPY --from=builder /build/webhook /app/webhook
+COPY --from=builder /build/longpool /app/longpool
+
+CMD ["./longpool"]
