@@ -17,7 +17,7 @@ import (
 func main() {
 	err := dotenv.Overload()
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
 	}
 
 	ctx := context.Background()

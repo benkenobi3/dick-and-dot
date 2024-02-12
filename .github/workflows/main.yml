@@ -14,15 +14,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read dotenv
-        run: echo '${{secrets.DotEnvFile}}' > .env
-
-      - name: Allow .env in .dockerignore
-        run: sed -i 's/.env/# .env/' .dockerignore
-
-      - name: Allow .env in .gitignore
-        run: sed -i 's/.env/# .env/' .gitignore
-
       - name: Push to dokku
         uses: dokku/github-action@v1.4.0
         with:
