@@ -46,7 +46,7 @@ func main() {
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	updateConfig := botapi.NewUpdate(0)
-	updateConfig.Timeout = 150
+	updateConfig.Timeout = 30
 
 	updates := bot.GetUpdatesChan(updateConfig)
 
