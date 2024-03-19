@@ -14,6 +14,8 @@ import (
 	"github.com/benkenobi3/dick-and-dot/internal/features/random"
 )
 
+const ErrorMessage = "Перелом члена. Возникла ошибка при обработке команды"
+
 type handler struct {
 	bot   *tgbotapi.BotAPI
 	dicks repository.Dicks
@@ -54,18 +56,24 @@ func (h *handler) Handle(ctx context.Context, update tgbotapi.Update) {
 			"Добавляй бот в свои чаты!"
 	case "dick":
 		text, err := h.dickCommand(ctx, update.Message.From.ID, update.Message.Chat.ID)
+		msg.Text = text
 		if err != nil {
 			log.Println(err)
+			msg.Text = ErrorMessage
 		}
-		msg.Text = text
 	case "top":
 		text, err := h.topCommand(ctx, update.Message.Chat.ID)
+		msg.Text = text
 		if err != nil {
 			log.Println(err)
+			msg.Text = ErrorMessage
 		}
-		msg.Text = text
 	default:
 		// ignore unknown command
+		return
+	}
+
+	if msg.Text == "" {
 		return
 	}
 
