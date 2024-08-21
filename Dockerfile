@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine3.18 AS builder
+FROM golang:1.23.0-alpine3.20 AS builder
 
 LABEL stage=builder
 
@@ -20,7 +20,7 @@ COPY . .
 RUN go build -ldflags="-s -w" -o /build/webhook ./cmd/webhook
 RUN go build -ldflags="-s -w" -o /build/longpool ./cmd/longpool
 
-FROM alpine:3.18
+FROM alpine:3.20
 
 RUN apk update --no-cache && apk add --no-cache ca-certificates
 
