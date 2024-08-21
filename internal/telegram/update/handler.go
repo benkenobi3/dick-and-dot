@@ -161,7 +161,7 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 
 	allDicks, err := h.dicks.GetDicksByChatId(ctx, chatID)
 	if err != nil {
-		return "", fmt.Errorf("cannot get dicks for /dick command: %w", err)
+		return "", fmt.Errorf("cannot get dicks for /top command: %w", err)
 	}
 
 	sortedDicks := sortDicks(allDicks)
@@ -181,7 +181,8 @@ func (h *handler) topCommand(ctx context.Context, chatID int64) (string, error) 
 
 		chatMember, err := h.bot.GetChatMember(config)
 		if err != nil {
-			return "", fmt.Errorf("cannot get chat for /dick command: %w", err)
+			finalText += fmt.Sprintf("%d | [ДАННЫЕ УДАЛЕНЫ] - писька равна %d см \n", topPos[idx], dick.Length)
+			continue
 		}
 
 		userName := chatMember.User.FirstName
