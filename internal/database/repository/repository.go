@@ -11,9 +11,9 @@ type dicks struct {
 }
 
 type Dicks interface {
-	CreateDick(ctx context.Context, dick Dick) error
-	UpdateDick(ctx context.Context, dick Dick) error
-	GetDicksByChatId(ctx context.Context, chatID int64) (map[int64]Dick, error)
+	AddDick(ctx context.Context, dick Dick) error
+	GetDick(ctx context.Context, chatID, userID int64) (Dick, error)
+	GetTopDicksByChatID(ctx context.Context, chatID int64, limit uint64) ([]Dick, error)
 }
 
 func NewDicks(db *sqlx.DB) Dicks {
