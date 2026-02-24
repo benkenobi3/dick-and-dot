@@ -29,12 +29,18 @@ func (d *dicks) GetDick(ctx context.Context, chatID, userID int64) (Dick, error)
 	if err != nil {
 		return Dick{}, fmt.Errorf("cannot get dick: %w", err)
 	}
+	defer result.Close()
 
 	dick := Dick{
 		ChatID: chatID,
 	}
 	for result.Next() {
-		err = result.Scan(&dick.UserID, &dick.Length, &dick.UpdatedAt)
+		if scanErr := result.Scan(&dick.UserID, &dick.Length, &dick.UpdatedAt); scanErr != nil {
+			return Dick{}, fmt.Errorf("scan dick failed: %w", scanErr)
+		}
+	}
+	if err = result.Err(); err != nil {
+		return Dick{}, fmt.Errorf("iterate dick rows failed: %w", err)
 	}
 
 	return dick, nil
@@ -65,9 +71,11 @@ func (d *dicks) AddDick(ctx context.Context, dick Dick) error {
 }
 
 const GetTopDicksByChatIDSQL = `
-select user_id, sum(length) 
-from dicks 
-where chat_id = $1 
+select user_id, sum(length) as length_sum
+from dick
+where chat_id = $1
+group by user_id
+order by length_sum desc, user_id asc
 limit $2;
 `
 
@@ -76,20 +84,18 @@ func (d *dicks) GetTopDicksByChatID(ctx context.Context, chatID int64, limit uin
 	if err != nil {
 		return nil, fmt.Errorf("cannot get top dicks: %w", err)
 	}
+	defer result.Close()
 
 	top := make([]Dick, 0)
 	for result.Next() {
 		dick := Dick{}
-		err = result.Scan(&dick.UserID, &dick.Length)
-		if err != nil {
-			return nil, fmt.Errorf("scan top dick failed: %w", err)
+		if scanErr := result.Scan(&dick.UserID, &dick.Length); scanErr != nil {
+			return nil, fmt.Errorf("scan top dick failed: %w", scanErr)
 		}
 		top = append(top, dick)
 	}
-
-	err = result.Close()
-	if err != nil {
-		return nil, fmt.Errorf("cannot close result after reading: %w", err)
+	if err = result.Err(); err != nil {
+		return nil, fmt.Errorf("iterate top dicks failed: %w", err)
 	}
 
 	return top, nil
